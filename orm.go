@@ -1,4 +1,4 @@
-package orm
+package goorm
 
 import (
 	"database/sql"
@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// Qb stands for query builder
+// Qb : QueryBuilder object
 type Qb struct {
 	t          string
 	err        error
@@ -26,7 +26,7 @@ func NewQuery(t string, db *sql.DB) *Qb {
 	}
 }
 
-// Select ...
+// Select columns
 func (qb *Qb) Select(fields ...string) *Qb {
 	qb.slct = fields
 
@@ -37,7 +37,7 @@ func (qb Qb) String() string {
 	return fmt.Sprintf("table: %s", qb.t)
 }
 
-// Where ...
+// Where condition
 func (qb *Qb) Where(key string, operator string, val interface{}) *Qb {
 	if qb.conditions != "" {
 		qb.conditions = fmt.Sprintf("%s AND %s %s ?", qb.conditions, key, operator)
@@ -50,7 +50,7 @@ func (qb *Qb) Where(key string, operator string, val interface{}) *Qb {
 	return qb
 }
 
-// OrWhere ...
+// OrWhere condition
 func (qb *Qb) OrWhere(key string, operator string, val interface{}) *Qb {
 	if qb.conditions != "" {
 		qb.conditions = fmt.Sprintf("%s OR %s %s ?", qb.conditions, key, operator)
@@ -63,7 +63,7 @@ func (qb *Qb) OrWhere(key string, operator string, val interface{}) *Qb {
 	return qb
 }
 
-// Get ...
+// Get the query you have just built...
 func (qb *Qb) Get() (*sql.Rows, error) {
 	var slct string
 	if len(qb.slct) > 0 {
@@ -80,7 +80,7 @@ func (qb *Qb) run(q string) (*sql.Rows, error) {
 	return qb.db.Query(q, qb.params...)
 }
 
-// Insert ...
+// Insert a new record
 func (qb *Qb) Insert(keys []string, values []interface{}) (*sql.Rows, error) {
 	if len(values) != len(keys) && len(keys) == 0 {
 		return nil, errors.New("keys and values don't match")
@@ -98,7 +98,7 @@ func (qb *Qb) Insert(keys []string, values []interface{}) (*sql.Rows, error) {
 	return qb.run(q)
 }
 
-// Update ..
+// Update an exists record
 func (qb *Qb) Update(data map[string]interface{}) (*sql.Rows, error) {
 	var values string
 
@@ -115,14 +115,14 @@ func (qb *Qb) Update(data map[string]interface{}) (*sql.Rows, error) {
 	return qb.run(q)
 }
 
-// Delete ...
+// Delete an exists record
 func (qb *Qb) Delete() (*sql.Rows, error) {
 	q := fmt.Sprintf("DELETE FROM %s %s", qb.t, qb.conditions)
 
 	return qb.run(q)
 }
 
-// Join ...
+// Join two tables together
 func (qb *Qb) Join(dir, tbl, local, operator, foreign string) *Qb {
 	qb.joins = fmt.Sprintf("%s %s JOIN %s ON %s %s %s ", qb.joins, dir, tbl, local, operator, foreign)
 

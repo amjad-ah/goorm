@@ -1,3 +1,3 @@
-# GO-ORM
+# GoORM
 
 > For learning purpose!

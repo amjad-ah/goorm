@@ -1,3 +1,3 @@
-module github.com/amjad-ah/go-orm
+module github.com/amjad-ah/goorm
 
 go 1.14
