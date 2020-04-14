@@ -9,12 +9,13 @@ import (
 
 // Qb stands for query builder
 type Qb struct {
-	t      string
-	q      string
-	params []interface{}
-	err    error
-	slct   []string
-	db     *sql.DB
+	t          string
+	q          string
+	err        error
+	slct       []string
+	db         *sql.DB
+	conditions string
+	params     []interface{}
 }
 
 // NewQuery creates a new instance of the query builder
@@ -33,15 +34,15 @@ func (qb *Qb) Select(fields ...string) *Qb {
 }
 
 func (qb Qb) String() string {
-	return fmt.Sprintf("SELECT %s FROM %s %s", strings.Join(qb.slct, ","), qb.t, qb.q)
+	return fmt.Sprintf("table: %s", qb.t)
 }
 
 // Where ...
 func (qb *Qb) Where(key string, operator string, val interface{}) *Qb {
-	if qb.q != "" {
-		qb.q = fmt.Sprintf("%s AND %s %s ?", qb.q, key, operator)
+	if qb.conditions != "" {
+		qb.conditions = fmt.Sprintf("%s AND %s %s ?", qb.conditions, key, operator)
 	} else {
-		qb.q = fmt.Sprintf("WHERE %s %s ?", key, operator)
+		qb.conditions = fmt.Sprintf("WHERE %s %s ?", key, operator)
 	}
 
 	qb.params = append(qb.params, val)
@@ -51,10 +52,10 @@ func (qb *Qb) Where(key string, operator string, val interface{}) *Qb {
 
 // OrWhere ...
 func (qb *Qb) OrWhere(key string, operator string, val interface{}) *Qb {
-	if qb.q != "" {
-		qb.q = fmt.Sprintf("%s OR %s %s ?", qb.q, key, operator)
+	if qb.conditions != "" {
+		qb.conditions = fmt.Sprintf("%s OR %s %s ?", qb.conditions, key, operator)
 	} else {
-		qb.q = fmt.Sprintf("WHERE %s %s ?", key, operator)
+		qb.conditions = fmt.Sprintf("WHERE %s %s ?", key, operator)
 	}
 
 	qb.params = append(qb.params, val)
@@ -71,7 +72,7 @@ func (qb *Qb) Get() (*sql.Rows, error) {
 		slct = "*"
 	}
 
-	qb.q = fmt.Sprintf("SELECT %s FROM %s %s", slct, qb.t, qb.q)
+	qb.q = fmt.Sprintf("SELECT %s FROM %s %s", slct, qb.t, qb.conditions)
 	return qb.run()
 }
 
@@ -104,7 +105,7 @@ func (qb *Qb) Update(data map[string]interface{}) (*sql.Rows, error) {
 		values = fmt.Sprintf("%s%s = '%s',", values, k, v)
 	}
 	values = strings.Trim(values, ",")
-	qb.q = fmt.Sprintf("UPDATE %s SET %s %s", qb.t, values, qb.q)
+	qb.q = fmt.Sprintf("UPDATE %s SET %s %s", qb.t, values, qb.conditions)
 
 	return qb.run()
 }
