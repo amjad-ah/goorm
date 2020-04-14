@@ -101,11 +101,23 @@ func (qb *Qb) Insert(keys []string, values []interface{}) (*sql.Rows, error) {
 // Update ..
 func (qb *Qb) Update(data map[string]interface{}) (*sql.Rows, error) {
 	var values string
+
+	params := []interface{}{}
 	for k, v := range data {
-		values = fmt.Sprintf("%s%s = '%s',", values, k, v)
+		values = fmt.Sprintf("%s%s = ?,", values, k)
+		params = append(params, v)
 	}
+
+	qb.params = append(params, qb.params...)
 	values = strings.Trim(values, ",")
 	qb.q = fmt.Sprintf("UPDATE %s SET %s %s", qb.t, values, qb.conditions)
+
+	return qb.run()
+}
+
+// Delete ...
+func (qb *Qb) Delete() (*sql.Rows, error) {
+	qb.q = fmt.Sprintf("DELETE FROM %s %s", qb.t, qb.conditions)
 
 	return qb.run()
 }
