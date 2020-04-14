@@ -11,6 +11,7 @@ import (
 type Qb struct {
 	t          string
 	err        error
+	joins      string
 	slct       []string
 	db         *sql.DB
 	conditions string
@@ -71,7 +72,7 @@ func (qb *Qb) Get() (*sql.Rows, error) {
 		slct = "*"
 	}
 
-	q := fmt.Sprintf("SELECT %s FROM %s %s", slct, qb.t, qb.conditions)
+	q := fmt.Sprintf("SELECT %s FROM %s %s %s", slct, qb.t, qb.joins, qb.conditions)
 	return qb.run(q)
 }
 
@@ -119,4 +120,11 @@ func (qb *Qb) Delete() (*sql.Rows, error) {
 	q := fmt.Sprintf("DELETE FROM %s %s", qb.t, qb.conditions)
 
 	return qb.run(q)
+}
+
+// Join ...
+func (qb *Qb) Join(dir, tbl, local, operator, foreign string) *Qb {
+	qb.joins = fmt.Sprintf("%s %s JOIN %s ON %s %s %s ", qb.joins, dir, tbl, local, operator, foreign)
+
+	return qb
 }
