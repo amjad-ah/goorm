@@ -2,6 +2,7 @@ package orm
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -13,13 +14,14 @@ type Qb struct {
 	params []interface{}
 	err    error
 	slct   []string
+	db     *sql.DB
 }
 
 // NewQuery creates a new instance of the query builder
-func NewQuery(t string) *Qb {
+func NewQuery(t string, db *sql.DB) *Qb {
 	return &Qb{
-		t:   t,
-		err: nil,
+		t:  t,
+		db: db,
 	}
 }
 
@@ -60,18 +62,49 @@ func (qb *Qb) OrWhere(key string, operator string, val interface{}) *Qb {
 	return qb
 }
 
-func (qb *Qb) build() (string, []interface{}) {
+// Get ...
+func (qb *Qb) Get() (*sql.Rows, error) {
 	var slct string
 	if len(qb.slct) > 0 {
 		slct = strings.Join(qb.slct, ",")
 	} else {
 		slct = "*"
 	}
-	return fmt.Sprintf("SELECT %s FROM %s %s", slct, qb.t, qb.q), qb.params
+
+	qb.q = fmt.Sprintf("SELECT %s FROM %s %s", slct, qb.t, qb.q)
+	return qb.run()
 }
 
-// Get ...
-func (qb *Qb) Get(db *sql.DB) (*sql.Rows, error) {
-	q, args := qb.build()
-	return db.Query(q, args...)
+func (qb *Qb) run() (*sql.Rows, error) {
+	return qb.db.Query(qb.q, qb.params...)
+}
+
+// Insert ...
+func (qb *Qb) Insert(keys []string, values []interface{}) (*sql.Rows, error) {
+	if len(values) != len(keys) && len(keys) == 0 {
+		return nil, errors.New("keys and values don't match")
+	}
+
+	k := fmt.Sprintf("%s", strings.Join(keys, ","))
+	for i := 0; i < len(keys); i++ {
+		keys[i] = "?"
+	}
+	v := fmt.Sprintf("%s", strings.Join(keys, ","))
+
+	qb.q = fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", qb.t, k, v)
+	qb.params = values
+
+	return qb.run()
+}
+
+// Update ..
+func (qb *Qb) Update(data map[string]interface{}) (*sql.Rows, error) {
+	var values string
+	for k, v := range data {
+		values = fmt.Sprintf("%s%s = '%s',", values, k, v)
+	}
+	values = strings.Trim(values, ",")
+	qb.q = fmt.Sprintf("UPDATE %s SET %s %s", qb.t, values, qb.q)
+
+	return qb.run()
 }
