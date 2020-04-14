@@ -1,3 +1,3 @@
 # GO-ORM
 
-> Form learning purpose!
+> For learning purpose!
