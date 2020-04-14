@@ -10,7 +10,6 @@ import (
 // Qb stands for query builder
 type Qb struct {
 	t          string
-	q          string
 	err        error
 	slct       []string
 	db         *sql.DB
@@ -72,12 +71,12 @@ func (qb *Qb) Get() (*sql.Rows, error) {
 		slct = "*"
 	}
 
-	qb.q = fmt.Sprintf("SELECT %s FROM %s %s", slct, qb.t, qb.conditions)
-	return qb.run()
+	q := fmt.Sprintf("SELECT %s FROM %s %s", slct, qb.t, qb.conditions)
+	return qb.run(q)
 }
 
-func (qb *Qb) run() (*sql.Rows, error) {
-	return qb.db.Query(qb.q, qb.params...)
+func (qb *Qb) run(q string) (*sql.Rows, error) {
+	return qb.db.Query(q, qb.params...)
 }
 
 // Insert ...
@@ -92,10 +91,10 @@ func (qb *Qb) Insert(keys []string, values []interface{}) (*sql.Rows, error) {
 	}
 	v := fmt.Sprintf("%s", strings.Join(keys, ","))
 
-	qb.q = fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", qb.t, k, v)
+	q := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", qb.t, k, v)
 	qb.params = values
 
-	return qb.run()
+	return qb.run(q)
 }
 
 // Update ..
@@ -110,14 +109,14 @@ func (qb *Qb) Update(data map[string]interface{}) (*sql.Rows, error) {
 
 	qb.params = append(params, qb.params...)
 	values = strings.Trim(values, ",")
-	qb.q = fmt.Sprintf("UPDATE %s SET %s %s", qb.t, values, qb.conditions)
+	q := fmt.Sprintf("UPDATE %s SET %s %s", qb.t, values, qb.conditions)
 
-	return qb.run()
+	return qb.run(q)
 }
 
 // Delete ...
 func (qb *Qb) Delete() (*sql.Rows, error) {
-	qb.q = fmt.Sprintf("DELETE FROM %s %s", qb.t, qb.conditions)
+	q := fmt.Sprintf("DELETE FROM %s %s", qb.t, qb.conditions)
 
-	return qb.run()
+	return qb.run(q)
 }
